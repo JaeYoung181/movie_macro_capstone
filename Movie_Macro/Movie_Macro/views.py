@@ -10,8 +10,11 @@ from datetime import datetime
 from flask import render_template, request, redirect, url_for, session
 from Movie_Macro import app
 import random
+from zoneinfo import ZoneInfo
 
 DB_NAME = 'movie_macro.db'
+def now_kst():
+    return datetime.now(ZoneInfo("Asia/Seoul"))
 RATE_LIMITS = {}
 FLOW_MIN_SECONDS = {
     'schedule': 1.0,
@@ -110,7 +113,7 @@ def save_action_log(action, movie_code=None, movie_title=None, reserve_date=None
             reserve_time,
             seats,
             request.remote_addr,
-            datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
+            now_kst().strftime('%Y-%m-%d %H:%M:%S'),
             status
         )
     )
@@ -500,7 +503,7 @@ def payment(movie_code):
             ))
 
 
-        reservation_code = f"R{datetime.now().strftime('%Y%m%d%H%M%S')}{random.randint(100,999)}"
+        reservation_code = f"R{now_kst().strftime('%Y%m%d%H%M%S')}{random.randint(100,999)}"
 
         cur.execute(
             '''
@@ -593,7 +596,7 @@ def login():
             return render_template(
                 'login.html',
                 title='로그인',
-                year=datetime.now().year,
+                year=now_kst().year,
                 error='아이디 또는 비밀번호가 올바르지 않습니다.',
                 message=message
             )
@@ -601,7 +604,7 @@ def login():
     return render_template(
         'login.html',
         title='로그인',
-        year=datetime.now().year,
+        year=now_kst().year,
         message=message
     )
 
@@ -623,7 +626,7 @@ def register():
             return render_template(
                 'register.html',
                 title='회원가입',
-                year=datetime.now().year,
+                year=now_kst().year,
                 error='비밀번호가 일치하지 않습니다.'
             )
 
@@ -640,7 +643,7 @@ def register():
             return render_template(
                 'register.html',
                 title='회원가입',
-                year=datetime.now().year,
+                year=now_kst().year,
                 error='이미 존재하는 아이디입니다.'
             )
 
@@ -656,7 +659,7 @@ def register():
     return render_template(
         'register.html',
         title='회원가입',
-        year=datetime.now().year
+        year=now_kst().year
     )
 
 @app.route('/my_reservations')
@@ -736,6 +739,6 @@ def logs():
     return render_template(
         'logs.html',
         title='행동 로그',
-        year=datetime.now().year,
+        year=now_kst().year,
         logs=rows
     )
