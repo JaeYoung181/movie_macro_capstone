@@ -1,0 +1,45 @@
+﻿{% extends "layout.html" %}
+
+{% block content %}
+<div class="jumbotron">
+    <h1>행동 로그</h1>
+    <p class="lead">사용자의 예매 과정 행동 기록입니다.</p>
+</div>
+
+<table class="table table-bordered table-striped">
+    <thead>
+        <tr>
+            <th>시간</th>
+            <th>사용자</th>
+            <th>행동</th>
+            <th>영화</th>
+            <th>날짜</th>
+            <th>시간대</th>
+            <th>좌석</th>
+            <th>IP</th>
+            <th>상태</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for log in logs %}
+        <tr>
+            <td>{{ log['created_at'] }}</td>
+            <td>{{ log['userid'] }}</td>
+            <td>{{ log['action'] }}</td>
+            <td>{{ log['movie_title'] }}</td>
+            <td>{{ log['reserve_date'] }}</td>
+            <td>{{ log['reserve_time'] }}</td>
+            <td>{{ log['seats'] }}</td>
+            <td>{{ log['ip_address'] }}</td>
+            <td>
+                {% if log['status'] == '차단' %}
+                <span class="label label-danger">차단</span>
+                {% else %}
+                <span class="label label-success">정상</span>
+                {% endif %}
+            </td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% endblock %}

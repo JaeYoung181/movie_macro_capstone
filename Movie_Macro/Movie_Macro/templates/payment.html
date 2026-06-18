@@ -1,0 +1,212 @@
+﻿{% extends "layout.html" %}
+
+{% block content %}
+<div class="jumbotron">
+    <h1>결제 페이지</h1>
+    <p class="lead">예매 정보를 확인하고 결제를 진행하세요.</p>
+</div>
+
+{% if error %}
+<div class="alert alert-danger">
+    {{ error }}
+</div>
+{% endif %}
+
+<div class="payment-layout">
+    <div class="payment-left">
+        <div class="payment-card">
+            <h2>{{ movie.title }}</h2>
+            <p><strong>장르:</strong> {{ movie.genre }}</p>
+            <p><strong>상영시간:</strong> {{ movie.runtime }}</p>
+        </div>
+
+        <div class="payment-card">
+            <h3>예매 정보</h3>
+            <p><strong>관람 날짜:</strong> {{ selected_date }}</p>
+            <p><strong>상영 시간:</strong> {{ selected_time }}</p>
+            <p><strong>관람 인원:</strong> {{ selected_people }}명</p>
+            <p><strong>선택 좌석:</strong> {{ seat_list | join(', ') }}</p>
+        </div>
+    </div>
+
+    <div class="payment-right">
+        <div class="payment-card total-card">
+            <h3>결제 금액</h3>
+            <p class="price">{{ total_price }}원</p>
+            <p class="price-desc">1인 12,000원 기준</p>
+        </div>
+
+        <form method="post" class="payment-card">
+            <input type="hidden" name="date" value="{{ selected_date }}">
+            <input type="hidden" name="time" value="{{ selected_time }}">
+            <input type="hidden" name="people" value="{{ selected_people }}">
+            <input type="hidden" name="seats" value="{{ seat_list | join(',') }}">
+            <input type="hidden" name="macro_token" value="{{ macro_token }}">
+            <div class="bot-field" aria-hidden="true">
+                <label for="company_name">회사명</label>
+                <input type="text" id="company_name" name="company_name" tabindex="-1" autocomplete="off">
+            </div>
+
+            <h3>결제 수단 선택</h3>
+
+            <label class="payment-method-card">
+                <input type="radio" name="payment_method" value="card">
+                <span>카드 결제</span>
+            </label>
+
+            <label class="payment-method-card">
+                <input type="radio" name="payment_method" value="simple">
+                <span>간편 결제</span>
+            </label>
+
+            <label class="payment-method-card">
+                <input type="radio" name="payment_method" value="bank">
+                <span>무통장 입금</span>
+            </label>
+
+            <div class="security-card">
+                <label for="security_answer">보안 확인: {{ payment_challenge.left }} + {{ payment_challenge.right }} = ?</label>
+                <input type="number"
+                       class="form-control"
+                       id="security_answer"
+                       name="security_answer"
+                       inputmode="numeric"
+                       autocomplete="off"
+                       required>
+            </div>
+
+            <div class="payment-actions">
+                <button type="submit" class="btn btn-primary btn-lg">결제 완료</button>
+                <a class="btn btn-default btn-lg"
+                   href="{{ url_for('seat_select', movie_code=movie_code, date=selected_date, time=selected_time) }}">
+                    이전으로
+                </a>
+            </div>
+        </form>
+    </div>
+</div>
+
+<style>
+    .payment-layout {
+        display: flex;
+        gap: 24px;
+        flex-wrap: wrap;
+    }
+
+    .payment-left {
+        flex: 2;
+        min-width: 320px;
+    }
+
+    .payment-right {
+        flex: 1;
+        min-width: 280px;
+    }
+
+    .payment-card {
+        background-color: #f7f7f7;
+        border-radius: 12px;
+        padding: 20px;
+        margin-bottom: 20px;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+    }
+
+    .payment-card,
+    .payment-info,
+    .payment-box,
+    .payment-summary {
+        color: #111 !important;
+    }
+
+        .payment-card h3,
+        .payment-card p,
+        .payment-card span,
+        .payment-card strong {
+            color: #111 !important;
+        }
+
+    label {
+        color: #222 !important;
+    }
+
+    input,
+    .form-control {
+        color: #111 !important;
+    }
+
+    .total-card,
+    .total-card h3,
+    .total-card p,
+    .total-card span,
+    .total-card strong {
+        color: #111 !important;
+    }
+
+        .total-card .price {
+            color: #111 !important;
+            font-size: 34px;
+            font-weight: bold;
+        }
+
+        .total-card .price-desc {
+            color: #111 !important;
+        }
+
+    .price {
+        font-size: 32px;
+        font-weight: bold;
+        margin: 10px 0 6px 0;
+    }
+
+    .price-desc {
+        color: #ccc;
+        margin: 0;
+    }
+
+    .payment-method-card {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        border: 1px solid #ccc;
+        background-color: white;
+        border-radius: 10px;
+        padding: 14px 16px;
+        margin-bottom: 12px;
+        cursor: pointer;
+    }
+
+        .payment-method-card input {
+            margin: 0;
+        }
+
+        .payment-method-card span {
+            font-size: 16px;
+        }
+
+    .payment-actions {
+        margin-top: 20px;
+        display: flex;
+        gap: 10px;
+        flex-wrap: wrap;
+    }
+
+    .security-card {
+        margin-top: 18px;
+        margin-bottom: 18px;
+    }
+
+        .security-card label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: bold;
+        }
+
+    .bot-field {
+        position: absolute;
+        left: -9999px;
+        width: 1px;
+        height: 1px;
+        overflow: hidden;
+    }
+</style>
+{% endblock %}

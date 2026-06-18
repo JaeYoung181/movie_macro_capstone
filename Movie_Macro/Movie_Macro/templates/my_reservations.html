@@ -1,0 +1,47 @@
+﻿{% extends "layout.html" %}
+
+{% block content %}
+<div class="jumbotron">
+    <h1>예매 내역</h1>
+    <p class="lead">내가 예매한 영화 목록입니다.</p>
+</div>
+
+{% if reservations and reservations|length > 0 %}
+<table class="table table-bordered table-striped">
+    <thead>
+        <tr>
+            <th>예약번호</th>
+            <th>영화</th>
+            <th>관람 날짜</th>
+            <th>상영 시간</th>
+            <th>인원</th>
+            <th>좌석</th>
+            <th>취소</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for r in reservations %}
+        <tr>
+            <td>{{ r['reservation_code'] }}</td>
+            <td>{{ r['movie_title'] }}</td>
+            <td>{{ r['reserve_date'] }}</td>
+            <td>{{ r['reserve_time'] }}</td>
+            <td>{{ r['people_count'] }}명</td>
+            <td>{{ r['seats'] }}</td>
+            <td>
+                <form method="post" action="{{ url_for('cancel_reservation', reservation_id=r['id']) }}">
+                    <button class="btn btn-danger btn-sm">취소</button>
+                </form>
+            </td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% else %}
+<div class="alert alert-info">
+    예매 내역이 없습니다.
+</div>
+{% endif %}
+
+<a class="btn btn-default" href="/">메인으로 돌아가기</a>
+{% endblock %}

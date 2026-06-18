@@ -1,0 +1,25 @@
+﻿{% extends "layout.html" %}
+
+{% block content %}
+<div class="jumbotron">
+    <h1>예매 완료</h1>
+    <p class="lead">예매가 정상적으로 완료되었습니다.</p>
+</div>
+
+<h2>예매 정보</h2>
+<p><strong>로그인 사용자:</strong> {{ user }}</p>
+<p><strong>영화:</strong> {{ movie.title }}</p>
+<p><strong>장르:</strong> {{ movie.genre }}</p>
+<p><strong>상영시간:</strong> {{ movie.runtime }}</p>
+<p><strong>관람 날짜:</strong> {{ selected_date }}</p>
+<p><strong>상영 시간:</strong> {{ selected_time }}</p>
+<p><strong>관람 인원:</strong> {{ selected_people }}명</p>
+<p><strong>선택 좌석:</strong> {{ selected_seats }}</p>
+<p><strong>예약번호:</strong> {{ reservation_code }}</p>
+
+<hr>
+
+<p>
+    <a class="btn btn-primary" href="/">메인으로 돌아가기</a>
+</p>
+{% endblock %}

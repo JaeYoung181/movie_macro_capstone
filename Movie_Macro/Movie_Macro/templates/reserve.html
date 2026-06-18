@@ -1,0 +1,283 @@
+﻿<!--
+{% extends "layout.html" %}
+
+{% block content %}
+<div class="jumbotron">
+    <h1>예매 페이지</h1>
+    <p class="lead">선택한 영화 정보를 확인하고 예매를 진행할 수 있습니다.</p>
+</div>
+
+<h2>{{ movie.title }}</h2>
+<p>장르: {{ movie.genre }}</p>
+<p>상영시간: {{ movie.runtime }}</p>
+
+<hr>
+
+{% if error %}
+<div class="alert alert-danger">
+    {{ error }}
+</div>
+{% endif %}
+
+<form id="reserve-form" method="post">
+    <input type="hidden" name="date" id="date" value="{{ selected_date }}">
+    <input type="hidden" name="time" id="time" value="{{ selected_time }}">
+    <input type="hidden" name="people" id="people" value="{{ selected_people }}">
+    <input type="hidden" name="selected_seats" id="selected_seats" value="{{ selected_seats }}">
+    <input type="hidden" name="action" id="action" value="">
+
+    <div class="form-group">
+        <label>관람 날짜</label>
+        <div class="button-group">
+            {% for d in date_options %}
+            <button type="button"
+                    class="choice-btn {% if d == selected_date %}active{% endif %}"
+                    onclick="selectDate('{{ d }}')">
+                {{ d }}
+            </button>
+            {% endfor %}
+        </div>
+    </div>
+
+    <div class="form-group">
+        <label>상영 시간</label>
+        <div class="button-group">
+            {% for t in time_options %}
+            <button type="button"
+                    class="choice-btn {% if t == selected_time %}active{% endif %}"
+                    onclick="selectTime('{{ t }}')">
+                {{ t }}
+            </button>
+            {% endfor %}
+        </div>
+    </div>
+
+    <div class="form-group">
+        <label>관람 인원</label>
+        <div class="button-group">
+            <button type="button" class="choice-btn {% if selected_people == '1' %}active{% endif %}" onclick="selectPeople('1')">1명</button>
+            <button type="button" class="choice-btn {% if selected_people == '2' %}active{% endif %}" onclick="selectPeople('2')">2명</button>
+            <button type="button" class="choice-btn {% if selected_people == '3' %}active{% endif %}" onclick="selectPeople('3')">3명</button>
+            <button type="button" class="choice-btn {% if selected_people == '4' %}active{% endif %}" onclick="selectPeople('4')">4명</button>
+        </div>
+    </div>
+
+    <hr>
+
+    <h3>좌석 선택</h3>
+    <p>회색 좌석은 이미 예약된 좌석입니다.</p>
+
+    <div id="seat-map">
+        {% for row_name, seats in seat_rows.items() %}
+        <div class="seat-row">
+            <span class="row-label">{{ row_name }}열</span>
+            {% for seat in seats %}
+            {% if seat in reserved_seats %}
+            <button type="button" class="seat reserved" data-seat="{{ seat }}" disabled>{{ seat }}</button>
+            {% else %}
+            <button type="button" class="seat" data-seat="{{ seat }}">{{ seat }}</button>
+            {% endif %}
+            {% endfor %}
+        </div>
+        {% endfor %}
+    </div>
+
+    <hr>
+
+    <h3>선택한 예매 정보</h3>
+    <p>영화: {{ movie.title }}</p>
+    <p>날짜: <span id="selected-date-text">{{ selected_date }}</span></p>
+    <p>시간: <span id="selected-time-text">{{ selected_time }}</span></p>
+    <p>인원: <span id="selected-people-text">{{ selected_people }}명</span></p>
+    <p>좌석: <span id="selected-seat-text">선택 전</span></p>
+
+    <div style="margin-top: 20px;">
+        <button type="submit" class="btn btn-primary" onclick="setAction('book')">예매 완료</button>
+        <a class="btn btn-default" href="/">메인으로 돌아가기</a>
+    </div>
+</form>
+
+<style>
+    #seat-map {
+        margin-top: 20px;
+        margin-bottom: 20px;
+    }
+
+    .seat-row {
+        margin-bottom: 10px;
+    }
+
+    .row-label {
+        display: inline-block;
+        width: 40px;
+        font-weight: bold;
+    }
+
+    .seat {
+        width: 50px;
+        height: 40px;
+        margin: 4px;
+        border: 1px solid #333;
+        background-color: #ffffff;
+        cursor: pointer;
+    }
+
+        .seat.selected {
+            background-color: #5bc0de;
+            color: white;
+        }
+
+        .seat.reserved {
+            background-color: #cccccc;
+            color: #666666;
+            cursor: not-allowed;
+        }
+
+    .button-group {
+        margin-top: 10px;
+        margin-bottom: 15px;
+    }
+
+    .choice-btn {
+        margin: 4px 6px 4px 0;
+        padding: 8px 14px;
+        border: 1px solid #999;
+        background-color: #ffffff;
+        cursor: pointer;
+    }
+
+        .choice-btn.active {
+            background-color: #5bc0de;
+            color: white;
+            border-color: #46b8da;
+        }
+</style>
+
+<script>
+        const reserveForm = document.getElementById('reserve-form');
+
+        const dateInput = document.getElementById('date');
+        const timeInput = document.getElementById('time');
+        const peopleInput = document.getElementById('people');
+        const selectedSeatsInput = document.getElementById('selected_seats');
+        const actionInput = document.getElementById('action');
+
+        const seatButtons = document.querySelectorAll('.seat:not(.reserved)');
+
+        const selectedDateText = document.getElementById('selected-date-text');
+        const selectedTimeText = document.getElementById('selected-time-text');
+        const selectedPeopleText = document.getElementById('selected-people-text');
+        const selectedSeatText = document.getElementById('selected-seat-text');
+
+        let selectedSeats = [];
+
+        function loadSelectedSeatsFromInput() {
+        if (selectedSeatsInput.value && selectedSeatsInput.value.trim() !== '') {
+            selectedSeats = selectedSeatsInput.value
+                .split(',')
+                .map(s => s.trim())
+                .filter(s => s !== '');
+        } else {
+            selectedSeats = [];
+        }
+    }
+
+        function syncSelectedButtons() {
+            document.querySelectorAll('.seat.selected').forEach(btn => {
+                btn.classList.remove('selected');
+            });
+
+        selectedSeats.forEach(seat => {
+            const btn = document.querySelector(`.seat[data-seat="${seat}"]`);
+        if (btn && !btn.classList.contains('reserved')) {
+            btn.classList.add('selected');
+            }
+        });
+    }
+
+        function updateSummary() {
+            selectedDateText.textContent = dateInput.value;
+        selectedTimeText.textContent = timeInput.value;
+        selectedPeopleText.textContent = peopleInput.value + '명';
+        selectedSeatText.textContent = selectedSeats.length > 0 ? selectedSeats.join(', ') : '선택 전';
+        selectedSeatsInput.value = selectedSeats.join(',');
+    }
+
+        function clearSelectedSeats() {
+            selectedSeats = [];
+        selectedSeatsInput.value = '';
+        document.querySelectorAll('.seat.selected').forEach(btn => {
+            btn.classList.remove('selected');
+        });
+        updateSummary();
+    }
+
+        function setAction(value) {
+            actionInput.value = value;
+        selectedSeatsInput.value = selectedSeats.join(',');
+    }
+
+        function submitRefresh() {
+            setAction('refresh');
+        reserveForm.submit();
+    }
+
+        function selectDate(value) {
+            dateInput.value = value;
+        clearSelectedSeats();
+        submitRefresh();
+    }
+
+        function selectTime(value) {
+            timeInput.value = value;
+        clearSelectedSeats();
+        submitRefresh();
+    }
+
+        function selectPeople(value) {
+            peopleInput.value = value;
+
+        const maxPeople = parseInt(value);
+        while (selectedSeats.length > maxPeople) {
+            const removedSeat = selectedSeats.pop();
+        const btn = document.querySelector(`.seat[data-seat="${removedSeat}"]`);
+        if (btn) {
+            btn.classList.remove('selected');
+            }
+        }
+
+        updateSummary();
+        submitRefresh();
+    }
+
+        function updateSeatSelection(button) {
+        const maxPeople = parseInt(peopleInput.value);
+        const seatNumber = button.dataset.seat;
+
+        if (button.classList.contains('selected')) {
+            button.classList.remove('selected');
+            selectedSeats = selectedSeats.filter(seat => seat !== seatNumber);
+        } else {
+            if (selectedSeats.length >= maxPeople) {
+            alert('선택한 인원 수만큼만 좌석을 고를 수 있습니다.');
+        return;
+            }
+        button.classList.add('selected');
+        selectedSeats.push(seatNumber);
+        }
+
+        updateSummary();
+    }
+
+    seatButtons.forEach(button => {
+            button.addEventListener('click', function () {
+                updateSeatSelection(this);
+            });
+    });
+
+        loadSelectedSeatsFromInput();
+        syncSelectedButtons();
+        updateSummary();
+</script>
+{% endblock %}
+-->

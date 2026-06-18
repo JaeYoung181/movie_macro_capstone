@@ -1,0 +1,240 @@
+﻿{% extends "layout.html" %}
+
+{% block content %}
+
+<div class="hero-banner">
+    <div class="hero-overlay">
+        <h1>Movie Macro</h1>
+        <p>매크로 방지 테스트용 영화 예매 사이트</p>
+    </div>
+</div>
+
+<div class="security-strip">
+    <div>
+        <strong>반복 요청 제한</strong>
+        <span>짧은 시간에 같은 단계를 반복하면 차단합니다.</span>
+    </div>
+    <div>
+        <strong>봇 입력 탐지</strong>
+        <span>사람에게 보이지 않는 입력값이 채워지면 기록합니다.</span>
+    </div>
+    <div>
+        <strong>결제 보안 확인</strong>
+        <span>결제 전 간단한 확인으로 자동 제출을 줄입니다.</span>
+    </div>
+</div>
+
+<div class="slider-wrapper">
+    <button type="button" class="slider-btn left" id="slide-left">&#10094;</button>
+
+    <div class="movie-slider" id="movie-slider">
+        {% for movie in movies %}
+        <div class="movie-card">
+            <img src="{{ url_for('static', filename=movie.poster) }}" alt="{{ movie.title }}" class="movie-poster">
+            <h3>{{ movie.title }}</h3>
+            <p>{{ movie.genre }} / {{ movie.runtime }}</p>
+            <a class="btn btn-primary" href="/reserve/{{ movie.code }}">예매하기</a>
+        </div>
+        {% endfor %}
+    </div>
+
+    <button type="button" class="slider-btn right" id="slide-right">&#10095;</button>
+</div>
+
+<style>
+    .hero-banner {
+        width: 100%;
+        height: 320px;
+        border-radius: 18px;
+        background-image: linear-gradient(rgba(0,0,0,0.45), rgba(0,0,0,0.45)), url("/static/images/cinema.png");
+        background-size: cover;
+        background-position: center;
+        margin-bottom: 30px;
+        display: flex;
+        align-items: flex-end;
+        box-shadow: 0 6px 18px rgba(0,0,0,0.2);
+    }
+
+    .hero-overlay {
+        color: white;
+        padding: 30px;
+    }
+
+        .hero-overlay h1 {
+            font-size: 52px;
+            margin: 0 0 10px 0;
+            font-weight: bold;
+        }
+
+        .hero-overlay p {
+            font-size: 20px;
+            margin: 0;
+        }
+
+    .slider-wrapper {
+        position: relative;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        width: 100%;
+        margin-top: 20px;
+    }
+
+    .security-strip {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 12px;
+        margin-bottom: 18px;
+    }
+
+        .security-strip div {
+            min-height: 88px;
+            padding: 16px;
+            border-radius: 8px;
+            background-color: #f4f4f4;
+            color: #111;
+            border-left: 4px solid #e50914;
+        }
+
+        .security-strip strong,
+        .security-strip span {
+            display: block;
+        }
+
+        .security-strip span {
+            margin-top: 8px;
+            color: #444;
+            line-height: 1.45;
+        }
+
+    .movie-slider {
+        display: flex;
+        flex-direction: row;
+        flex-wrap: nowrap;
+        gap: 24px;
+        overflow-x: auto;
+        overflow-y: hidden;
+        scroll-behavior: smooth;
+        padding: 10px 4px 20px 4px;
+        width: 100%;
+        cursor: grab;
+        user-select: none;
+    }
+
+        .movie-slider::-webkit-scrollbar {
+            height: 10px;
+        }
+
+        .movie-slider::-webkit-scrollbar-thumb {
+            background-color: #555;
+            border-radius: 10px;
+        }
+
+    .movie-card {
+        flex: 0 0 260px;
+        width: 260px;
+        background-color: #f8f8f8;
+        border-radius: 14px;
+        padding: 16px;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+        text-align: center;
+        transition: transform 0.25s ease, box-shadow 0.25s ease;
+    }
+
+        .movie-card:hover {
+            transform: translateY(-6px) scale(1.02);
+            box-shadow: 0 10px 22px rgba(0, 0, 0, 0.18);
+        }
+
+    .movie-poster {
+        width: 100%;
+        height: 360px;
+        object-fit: cover;
+        border-radius: 10px;
+        margin-bottom: 14px;
+        transition: opacity 0.25s ease;
+        display: block;
+    }
+
+    .movie-card h3 {
+        margin-top: 0;
+        margin-bottom: 8px;
+        color: #111;
+        font-weight: bold;
+    }
+
+    .movie-card p {
+        margin-bottom: 14px;
+        color: #555;
+    }
+
+    .movie-card .btn {
+        width: 100%;
+        border-radius: 8px;
+        font-weight: bold;
+    }
+
+    .slider-btn {
+        width: 44px;
+        height: 44px;
+        border: none;
+        border-radius: 50%;
+        background-color: rgba(255,255,255,0.15);
+        color: white;
+        font-size: 22px;
+        cursor: pointer;
+        flex-shrink: 0;
+    }
+
+        .slider-btn:hover {
+            background-color: rgba(255,255,255,0.28);
+        }
+
+    @media (max-width: 768px) {
+        .security-strip {
+            grid-template-columns: 1fr;
+        }
+    }
+</style>
+
+<script>
+    const slider = document.getElementById('movie-slider');
+    const leftBtn = document.getElementById('slide-left');
+    const rightBtn = document.getElementById('slide-right');
+
+    leftBtn.addEventListener('click', function () {
+        slider.scrollBy({ left: -600, behavior: 'smooth' });
+    });
+
+    rightBtn.addEventListener('click', function () {
+        slider.scrollBy({ left: 600, behavior: 'smooth' });
+    });
+
+    let isDown = false;
+    let startX;
+    let scrollLeft;
+
+    slider.addEventListener('mousedown', (e) => {
+        isDown = true;
+        startX = e.pageX - slider.offsetLeft;
+        scrollLeft = slider.scrollLeft;
+    });
+
+    slider.addEventListener('mouseleave', () => {
+        isDown = false;
+    });
+
+    slider.addEventListener('mouseup', () => {
+        isDown = false;
+    });
+
+    slider.addEventListener('mousemove', (e) => {
+        if (!isDown) return;
+        e.preventDefault();
+        const x = e.pageX - slider.offsetLeft;
+        const walk = (x - startX) * 1.4;
+        slider.scrollLeft = scrollLeft - walk;
+    });
+</script>
+
+{% endblock %}

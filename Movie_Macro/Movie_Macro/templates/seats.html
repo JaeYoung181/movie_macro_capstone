@@ -1,0 +1,427 @@
+﻿{% extends "layout.html" %}
+
+{% block content %}
+<div class="jumbotron">
+    <h1>좌석 선택</h1>
+    <p class="lead">관람 인원과 좌석을 선택하세요.</p>
+</div>
+
+<div class="movie-info-box">
+    <h2>{{ movie.title }}</h2>
+    <p>장르: {{ movie.genre }}</p>
+    <p>상영시간: {{ movie.runtime }}</p>
+    <p>관람 날짜: {{ selected_date }}</p>
+    <p>상영 시간: {{ selected_time }}</p>
+</div>
+
+<hr>
+
+{% if error %}
+<div class="alert alert-danger">
+    {{ error }}
+</div>
+{% endif %}
+
+<form id="seat-form" method="post">
+    <input type="hidden" name="date" value="{{ selected_date }}">
+    <input type="hidden" name="time" value="{{ selected_time }}">
+    <input type="hidden" name="selected_seats" id="selected_seats" value="{{ selected_seats }}">
+    <input type="hidden" name="people" id="people" value="{{ selected_people }}">
+    <input type="hidden" name="macro_token" value="{{ macro_token }}">
+    <div class="bot-field" aria-hidden="true">
+        <label for="company_name">회사명</label>
+        <input type="text" id="company_name" name="company_name" tabindex="-1" autocomplete="off">
+    </div>
+
+    <div class="visitor-box">
+        <h3>관람 인원</h3>
+        <div class="button-group">
+            {% for n in range(1, 9) %}
+            <button type="button"
+                    class="choice-btn {% if selected_people == n|string %}active{% endif %}"
+                    onclick="selectPeople('{{ n }}', this)">
+                {{ n }}
+            </button>
+            {% endfor %}
+        </div>
+    </div>
+
+    <div class="seat-area">
+        <div class="seat-area-top">
+            <h3>좌석을 선택해 주세요</h3>
+            <button type="submit" class="btn btn-primary">결제 페이지로 이동</button>
+        </div>
+
+        <div class="screen-wrapper">
+            <div class="screen-label">screen</div>
+            <div class="screen-arc"></div>
+        </div>
+
+        <div id="seat-map">
+            <!-- 좌석 번호 표시 -->
+            <div class="seat-number-row">
+                <span class="row-label-empty"></span>
+                {% for n in range(1, 21) %}
+                <span class="seat-number">{{ n }}</span>
+                {% if n == 6 or n == 14 %}
+                <span class="aisle-gap"></span>
+                {% endif %}
+                {% endfor %}
+            </div>
+
+            {% for row_name, seats in seat_rows.items() %}
+            {% if row_name == 'F' %}
+            <div class="horizontal-aisle"></div>
+            {% endif %}
+
+            <div class="seat-row">
+                <span class="row-label">{{ row_name }}열</span>
+
+                {% for seat in seats %}
+                {% set seat_num = seat[1:]|int %}
+
+                {% if seat in reserved_seats %}
+                <button type="button" class="seat reserved" data-seat="{{ seat }}" disabled>{{ seat_num }}</button>
+                {% else %}
+                <button type="button" class="seat" data-seat="{{ seat }}">{{ seat_num }}</button>
+                {% endif %}
+
+                {% if seat_num == 6 or seat_num == 14 %}
+                <span class="aisle-gap"></span>
+                {% endif %}
+                {% endfor %}
+            </div>
+            {% endfor %}
+        </div>
+
+        <div class="seat-legend">
+            <span><span class="legend-box normal-box"></span> 일반석</span>
+            <span><span class="legend-box reserved-box"></span> 예약석</span>
+            <span><span class="legend-box selected-box"></span> 선택석</span>
+        </div>
+    </div>
+
+    <div class="summary-box">
+        <h3>선택한 예매 정보</h3>
+        <p>영화: {{ movie.title }}</p>
+        <p>날짜: {{ selected_date }}</p>
+        <p>시간: {{ selected_time }}</p>
+        <p>인원: <span id="selected-people-text">{{ selected_people }}명</span></p>
+        <p>좌석: <span id="selected-seat-text">선택 전</span></p>
+    </div>
+
+    <div style="margin-top: 20px;">
+        <a class="btn btn-default" href="{{ url_for('reserve', movie_code=movie_code) }}">이전으로</a>
+    </div>
+</form>
+
+<style>
+    .movie-info-box {
+        margin-bottom: 20px;
+    }
+
+    .visitor-box {
+        margin-bottom: 25px;
+    }
+
+    .button-group {
+        margin-top: 10px;
+        margin-bottom: 15px;
+    }
+
+    .choice-btn {
+        margin: 4px 6px 4px 0;
+        padding: 8px 14px;
+        min-width: 48px;
+        border: 1px solid #999;
+        background-color: #ffffff;
+        cursor: pointer;
+        border-radius: 6px;
+    }
+
+        .choice-btn.active {
+            background-color: #d9534f;
+            color: white;
+            border-color: #d43f3a;
+        }
+
+    .seat-area {
+        margin-top: 20px;
+        padding: 20px 20px 25px 20px;
+        background-color: #111111;
+        color: white;
+        border-radius: 16px;
+        border: 1px solid #3a3a3a;
+        box-shadow: 0 0 0 6px rgba(255,255,255,0.04), 0 10px 24px rgba(0,0,0,0.35);
+    }
+
+    .seat-area-top {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 20px;
+        padding-bottom: 12px;
+        border-bottom: 1px solid rgba(255, 255, 0, 0.08);
+    }
+
+        .seat-area-top h3 {
+            margin: 0;
+            font-size: 22px;
+        }
+
+    .seat-submit-btn {
+        background-color: white;
+        color: black;
+        border: none;
+    }
+
+    .screen-wrapper {
+        text-align: center;
+        margin-bottom: 30px;
+        padding-top: 8px;
+    }
+
+    .screen-label {
+        color: #999;
+        font-size: 18px;
+        margin-bottom: 5px;
+    }
+
+    .screen-arc {
+        width: 280px;
+        height: 35px;
+        margin: 0 auto;
+        border-top: 3px solid #d88a3d;
+        border-radius: 50% 50% 0 0;
+        opacity: 0.9;
+    }
+
+    #seat-map {
+        margin-top: 20px;
+        margin-bottom: 20px;
+        text-align: center;
+        overflow-x: auto;
+        white-space: nowrap;
+    }
+
+    .seat-number-row {
+        margin-bottom: 12px;
+    }
+
+    .row-label-empty {
+        display: inline-block;
+        width: 50px;
+    }
+
+    .seat-number {
+        display: inline-block;
+        width: 28px;
+        margin: 2px;
+        color: #ddd;
+        font-size: 12px;
+        text-align: center;
+    }
+
+    .seat-row {
+        margin-bottom: 8px;
+    }
+
+    .row-label {
+        display: inline-block;
+        width: 50px;
+        font-weight: bold;
+        color: white;
+        margin-right: 8px;
+        text-align: right;
+    }
+
+    .seat {
+        width: 28px;
+        height: 24px;
+        margin: 2px;
+        border: 1px solid #999;
+        background-color: #ffffff;
+        color: black;
+        cursor: pointer;
+        border-radius: 3px;
+        font-size: 10px;
+        padding: 0;
+        text-align: center;
+        vertical-align: middle;
+    }
+
+        .seat.selected {
+            background-color: #5bc0de;
+            color: white;
+            border-color: #46b8da;
+        }
+
+        .seat.reserved {
+            background-color: #777777;
+            color: #dddddd;
+            cursor: not-allowed;
+            border-color: #777777;
+        }
+
+    .aisle-gap {
+        display: inline-block;
+        width: 22px;
+    }
+
+    .horizontal-aisle {
+        height: 28px;
+    }
+
+        .seat.selected {
+            background-color: #5bc0de;
+            color: white;
+            border-color: #46b8da;
+        }
+
+        .seat.reserved {
+            background-color: #777777;
+            color: #dddddd;
+            cursor: not-allowed;
+            border-color: #777777;
+        }
+
+    .seat-legend {
+        margin-top: 20px;
+        display: flex;
+        gap: 20px;
+        flex-wrap: wrap;
+        font-size: 15px;
+    }
+
+    .legend-box {
+        display: inline-block;
+        width: 14px;
+        height: 14px;
+        margin-right: 6px;
+        vertical-align: middle;
+        border: 1px solid #ccc;
+    }
+
+    .normal-box {
+        background-color: white;
+    }
+
+    .reserved-box {
+        background-color: #777777;
+        border-color: #777777;
+    }
+
+    .selected-box {
+        background-color: #5bc0de;
+        border-color: #46b8da;
+    }
+
+    .summary-box {
+        margin-top: 25px;
+        padding: 18px;
+        background-color: #e9e9e9;
+        border-radius: 12px;
+        border: 1px solid #bdbdbd;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.18);
+    }
+    .summary-box h3,
+    .summary-box p,
+    .summary-box span,
+    .summary-box strong {
+        color: #111 !important;
+        }
+
+    .bot-field {
+        position: absolute;
+        left: -9999px;
+        width: 1px;
+        height: 1px;
+        overflow: hidden;
+    }
+</style>
+
+<script>
+    const peopleInput = document.getElementById('people');
+    const selectedSeatsInput = document.getElementById('selected_seats');
+    const seatButtons = document.querySelectorAll('.seat:not(.reserved)');
+    const selectedPeopleText = document.getElementById('selected-people-text');
+    const selectedSeatText = document.getElementById('selected-seat-text');
+
+    let selectedSeats = [];
+
+    function loadSelectedSeatsFromInput() {
+        if (selectedSeatsInput.value && selectedSeatsInput.value.trim() !== '') {
+            selectedSeats = selectedSeatsInput.value
+                .split(',')
+                .map(s => s.trim())
+                .filter(s => s !== '');
+        } else {
+            selectedSeats = [];
+        }
+    }
+
+    function syncSelectedButtons() {
+        document.querySelectorAll('.seat.selected').forEach(btn => btn.classList.remove('selected'));
+
+        selectedSeats.forEach(seat => {
+            const btn = document.querySelector(`.seat[data-seat="${seat}"]`);
+            if (btn && !btn.classList.contains('reserved')) {
+                btn.classList.add('selected');
+            }
+        });
+    }
+
+    function updateSummary() {
+        selectedPeopleText.textContent = peopleInput.value + '명';
+        selectedSeatText.textContent = selectedSeats.length > 0 ? selectedSeats.join(', ') : '선택 전';
+        selectedSeatsInput.value = selectedSeats.join(',');
+    }
+
+    function selectPeople(value, element) {
+        peopleInput.value = value;
+
+        const maxPeople = parseInt(value);
+        while (selectedSeats.length > maxPeople) {
+            const removedSeat = selectedSeats.pop();
+            const btn = document.querySelector(`.seat[data-seat="${removedSeat}"]`);
+            if (btn) {
+                btn.classList.remove('selected');
+            }
+        }
+
+        document.querySelectorAll('.choice-btn').forEach(btn => btn.classList.remove('active'));
+        element.classList.add('active');
+
+        updateSummary();
+    }
+
+    function updateSeatSelection(button) {
+        const maxPeople = parseInt(peopleInput.value);
+        const seatNumber = button.dataset.seat;
+
+        if (button.classList.contains('selected')) {
+            button.classList.remove('selected');
+            selectedSeats = selectedSeats.filter(seat => seat !== seatNumber);
+        } else {
+            if (selectedSeats.length >= maxPeople) {
+                alert('선택한 인원 수만큼만 좌석을 고를 수 있습니다.');
+                return;
+            }
+            button.classList.add('selected');
+            selectedSeats.push(seatNumber);
+        }
+
+        updateSummary();
+    }
+
+    seatButtons.forEach(button => {
+        button.addEventListener('click', function () {
+            updateSeatSelection(this);
+        });
+    });
+
+    loadSelectedSeatsFromInput();
+    syncSelectedButtons();
+    updateSummary();
+</script>
+{% endblock %}

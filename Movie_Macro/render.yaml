@@ -1,0 +1,6 @@
+services:
+  - type: web
+    name: movie-macro
+    env: python
+    buildCommand: pip install -r requirements.txt
+    startCommand: gunicorn Movie_Macro:app
